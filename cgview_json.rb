@@ -2,6 +2,7 @@ require 'json'
 require 'yaml'
 require 'bio'
 require 'csv'
+require 'ostruct'
 
 
 class CGViewJSON
@@ -16,12 +17,14 @@ class CGViewJSON
     @options = options
     @features = []
     @plots = []
+    @tracks = []
+    @blast_tracks = []
     @debug = options[:debug]
     @config = options[:config] ? read_config(options[:config]) : {}
     read_sequence(sequence_path)
     extract_features
     read_gff_analysis(options[:analysis_path]) if options[:analysis_path]
-    build_feature_types
+    read_blasts(options[:blasts]) if options[:blasts]
     build_legend
     build_captions
     build_tracks
@@ -33,7 +36,6 @@ class CGViewJSON
       version: VERSION,
       settings: {},
       sequence: {},
-      featureTypes: [],
       captions: [],
       legend: {},
       features: [],
@@ -63,6 +65,7 @@ class CGViewJSON
   end
 
   def read_sequence(path)
+    puts "Reading sequence file..."
     flatfile = Bio::FlatFile.auto(path)
     # Determine Sequence file type
     case flatfile.dbclass.to_s
@@ -86,6 +89,7 @@ class CGViewJSON
   end
 
   def extract_features
+    puts "Extracting features..."
     return unless [:embl, :genbank].include?(@seq_type)
     features_to_skip = ['source', 'gene', 'exon']
     # TODO: look into complex features from xml-builder
@@ -118,32 +122,8 @@ class CGViewJSON
     end
   end
 
-  def build_feature_types
-    types = []
-    config_types = {}
-    default_decoration = 'arrow' # This can be overridden in config file
-    # Read config file types
-    if @config[:featureTypes].is_a?(Array)
-      @config[:featureTypes].each { |t| config_types[t[:name]] = t }
-      if config_types['DEFAULT']
-        default_decoration = config_types['DEFAULT'][:decoration]
-      end
-    end
-    feature_type_names = @features.map { |f| f[:type] }.uniq
-    # Add config feature types that are present in features (Intersection)
-    config_names_to_add = config_types.keys & feature_type_names
-    config_names_to_add.each do |name|
-      types << config_types[name]
-    end
-    # Create new feature types and use default decoration
-    missing_type_names = feature_type_names - config_types.keys
-    missing_type_names.each do |name|
-      types << { name: name, decoration: default_decoration }
-    end
-    @cgview[:featureTypes] += types
-  end
-
   def build_legend
+    puts "Building legend..."
     config_items = {}
     default_legend_name = nil
     # Read config file legend items
@@ -167,16 +147,104 @@ class CGViewJSON
   end
 
   def build_captions
+    puts "Building captions..."
     @captions = []
     config_captions = @config[:captions].is_a?(Array) ? @config[:captions] : []
     config_captions.each do |caption|
       if caption[:items]
         @captions << caption
-      elsif caption[:id] == 'title' && map_title != ""
+      elsif caption[:name].downcase == 'title' && map_title != ""
         caption[:items] = [ { text:  map_title}]
         @captions << caption
       end
     end
+  end
+
+  # Currently only reads blastn, blastx, tblastx results properly
+  # Blast results are expected to have the typical format without a header
+  # (i.e. option -outfmt 6)
+  # Columns
+  # 0: query_id
+  # 1: match_id
+  # 2: %_identity
+  # 3: alignment_length
+  # 4: mismatches
+  # 5: gap_openings
+  # 6: q_start
+  # 7: q_end
+  # 8: s_start
+  # 9: s_end
+  # 10: evalue
+  # 11: bit_score
+  # OPTIONAL
+  #  - Custom formatting can be used to provide the strand information
+  #    12: strand (optional) NOT IMPLEMENTED YET
+  #  - The query_id may contain additional details such as the start, end of the query in
+  #    relation to the genome sequence
+  #    This format is produced from the sequence_to_multi_fasta.pl script
+  #    (e.g. some_id._start=123;end=456)
+  def read_blasts(paths)
+    paths.each_with_index do |path, i|
+      puts "Creating features for BLAST #{i+1} results..."
+      num = i + 1
+      # Create Features
+      CSV.foreach(path, col_sep: "\t") do |row|
+        query_id = row[0]
+        match_id = row[1]
+        start = row[6].to_i
+        stop = row[7].to_i
+        strand = 1
+        offset = 0
+        if query_id =~ /^([^\t]+)_start=(\d+);end=(\d+)/
+          offset = $2.to_i - 1
+        end
+
+        # Collect meta data
+        meta = {
+          identity: row[2],
+          mimatches: row[4],
+          evalue: row[10],
+          score: row[11]
+        }
+
+        if start > stop
+          start,stop = stop,start
+          strand = -1
+        end
+
+        @features.push({
+          type: 'blast',
+          meta: meta,
+          start: offset + start,
+          stop: offset + stop,
+          strand: strand,
+          source: "blast_#{num}"
+        })
+      end
+
+      # Create Track
+      @blast_tracks << {
+        name: "blast_#{num}",
+        position: 'inside',
+        strand: 'combined',
+        contents: {
+          type: 'feature',
+          from: 'source',
+          extract: "blast_#{num}"
+        }
+      }
+    end
+  end
+
+  def parse_query_id(id)
+    query = OpenStruct.new
+    if id =~ /^([^\t]+)_start=(\d+);end=(\d+)/
+      query.start = $2
+      query.end = $3
+    else
+      query.start = 1
+    end
+    query
   end
 
   def read_gff_analysis(path)
@@ -223,19 +291,22 @@ class CGViewJSON
   end
 
   def build_tracks
-    @tracks = [
-      {
-        name: 'Features',
-        readingFrame: 'combined',
-        strand: 'separated',
-        position: 'both',
-        contents: {
-          type: 'feature',
-          from: 'source',
-          extract: 'sequence-features'
-        }
+    puts "Building Tracks..."
+    @tracks << {
+      name: 'Features',
+      readingFrame: 'combined',
+      strand: 'separated',
+      position: 'both',
+      contents: {
+        type: 'feature',
+        from: 'source',
+        extract: 'sequence-features'
       }
-    ]
+    }
+
+    unless @blast_tracks.empty?
+      @tracks += @blast_tracks
+    end
 
     if @options[:analysis_path]
       @tracks << {
@@ -251,6 +322,7 @@ class CGViewJSON
   end
 
   def build_cgview
+    puts "Creating CGView JSON"
     if @debug
       @cgview[:sequence][:seq] = "SEQUENCE WOULD GO HERE"
       @cgview[:features] += @features[1..5]
@@ -288,13 +360,13 @@ class CGViewJSON
 
 end
 
-# debug = false
+debug = false
 # # debug = true
 # file = "data/sequences/NC_001823.gbk" # 70 KB
-# # file = "data/sequences/NC_000907.gbk" # 1.8 MB
+file = "data/sequences/NC_000907.gbk" # 1.8 MB
 # # file = "data/sequences/NC_000913.gbk" # 4.6 MB
-# config_path = 'scripts/cgview_json_builder/config.yaml'
-# cgview = CGViewJSON.new(file, config: config_path, debug: debug)
+config_path = 'scripts/cgview-builder/config_example.yaml'
+cgview = CGViewJSON.new(file, config: config_path, debug: debug)
 #
 # # file = "data/sequences/B_pert_TahomaI.gbk" # 4 MB
 # # config_path = 'scripts/cgview_json_builder/test_config.yaml'
@@ -302,5 +374,5 @@ end
 # # cgview = CGViewJSON.new(file, config: config_path, debug: debug, analysis_path: analysis_path)
 #
 #
-# cgview.write_json("/Users/jason/workspace/stothard_group/cgview-js/data/tests/builder.json")
+cgview.write_json("/Users/jason/workspace/stothard_group/cgview-js/data/tests/builder.json")
 

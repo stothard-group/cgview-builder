@@ -28,6 +28,10 @@ optparse = OptionParser.new do |opts|
     options.config = config
   end
 
+  opts.on("-b", "--blasts FILEs", "One or more blast files (separated by ,)") do |blast_paths|
+    options.blast_paths = blast_paths
+  end
+
   # This will print an options summary.
   opts.on('-h', '-?', '--help', "Show this message") do
     puts opts
@@ -50,7 +54,15 @@ if !(options.seqfile && options.outfile) then
   exit
 end
 
-cgview = CGViewJSON.new(options.seqfile, config: options.config)
+cgview_options = {
+  config: options.config,
+}
+
+if options.blast_paths
+  cgview_options[:blasts] =  options.blast_paths.split(',')
+end
+
+cgview = CGViewJSON.new(options.seqfile, cgview_options)
 cgview.write_json(options.outfile)
 
 
