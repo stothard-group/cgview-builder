@@ -34,7 +34,7 @@ class CGViewJSON
   def initialize_cgview
     {
       version: VERSION,
-      created: Time.now.strftime("%Y-%m-%d %H:%M:%S")
+      created: Time.now.strftime("%Y-%m-%d %H:%M:%S"),
       settings: {},
       sequence: {},
       captions: [],
@@ -114,7 +114,7 @@ class CGViewJSON
       # Create Feature
       @features.push({
         type: feature.feature,
-        name: name,
+        label: name,
         start: location.from,
         stop: location.to,
         strand: location.strand,
