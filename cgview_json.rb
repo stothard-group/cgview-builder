@@ -7,7 +7,7 @@ require 'ostruct'
 
 class CGViewJSON
 
-  VERSION = '1.0'
+  VERSION = '0.1'
 
   attr_accessor :config, :options, :seq_object, :sequence, :cgview, :seq_type, :features,
                 :tracks, :debug, :captions
@@ -34,6 +34,7 @@ class CGViewJSON
   def initialize_cgview
     {
       version: VERSION,
+      created: Time.now.strftime("%Y-%m-%d %H:%M:%S")
       settings: {},
       sequence: {},
       captions: [],
@@ -113,7 +114,7 @@ class CGViewJSON
       # Create Feature
       @features.push({
         type: feature.feature,
-        label: name,
+        name: name,
         start: location.from,
         stop: location.to,
         strand: location.strand,
@@ -128,15 +129,15 @@ class CGViewJSON
     default_legend_name = nil
     # Read config file legend items
     if @config[:legend] && @config[:legend][:items].is_a?(Array)
-      @config[:legend][:items].each { |i| config_items[i[:text]] = i }
+      @config[:legend][:items].each { |i| config_items[i[:name]] = i }
       default_legend_name =  @config[:legend][:default]
     end
     # FIXME: add default legend if one does not exist
     @features.each do |feature|
       if config_items[feature[:type]]
-        feature[:legend] = config_items[feature[:type]][:text]
+        feature[:legend] = config_items[feature[:type]][:name]
       elsif default_legend_name
-        feature[:legend] = config_items[default_legend_name][:text]
+        feature[:legend] = config_items[default_legend_name][:name]
       end
     end
     # Intersection of legend names (They will be in the same order as the config
@@ -154,7 +155,7 @@ class CGViewJSON
       if caption[:items]
         @captions << caption
       elsif caption[:name].downcase == 'title' && map_title != ""
-        caption[:items] = [ { text:  map_title}]
+        caption[:items] = [ { name:  map_title}]
         @captions << caption
       end
     end

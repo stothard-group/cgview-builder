@@ -39,8 +39,8 @@ cgview:
     #   backgroundColor: "rgba(255,255,255,0.4)"
     #   font: "san-serif, plain, 14"
     #   items:
-    #     - text: 'Accession: 123456'
-    #     - text: 'Length: Short'
+    #     - name: 'Accession: 123456'
+    #     - name: 'Length: Short'
   legend:
     position: 'upper-right'
     alignment: 'left'
@@ -49,14 +49,14 @@ cgview:
     font: 'sans-serif, plain, 14'
     default: 'Other'
     items:
-      - text: 'CDS'
+      - name: 'CDS'
         swatchColor: 'rgba(0,0,153,0.5)'
         decoration: 'arrow'
-      - text: 'tRNA'
+      - name: 'tRNA'
         swatchColor: 'rgba(153,0,153,0.5)'
-      - text: 'rRNA'
+      - name: 'rRNA'
         swatchColor: 'rgba(0,153,53,0.5)'
-      - text: 'Other'
+      - name: 'Other'
         swatchColor: 'rgba(153,153,153,0.5)'
   layout:
     tracks:
