@@ -12,7 +12,7 @@ cgview:
         thickness: 1
         color: 'black'
   sequence:
-    font: 'san-serif, plain, 10'
+    font: 'sans-serif, plain, 14'
     color: 'black'
   featureTypes:
     - name: 'CDS'
@@ -32,12 +32,12 @@ cgview:
       position: "lower-center"
       fontColor: "orange"
       backgroundColor: "rgba(255,255,255,0.4)"
-      font: "san-serif, plain, 24"
+      font: "sans-serif, plain, 24"
     # - name: "More info"
     #   position: "upper-left"
     #   fontColor: "red"
     #   backgroundColor: "rgba(255,255,255,0.4)"
-    #   font: "san-serif, plain, 14"
+    #   font: "sans-serif, plain, 14"
     #   items:
     #     - name: 'Accession: 123456'
     #     - name: 'Length: Short'
