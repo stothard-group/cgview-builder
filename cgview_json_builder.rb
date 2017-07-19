@@ -17,6 +17,10 @@ optparse = OptionParser.new do |opts|
     options.seqfile = seqfile
   end
 
+  opts.on("-m", "--map_id STRING", "ID for map [Default: Random 40 character hex string]") do |map_id|
+    options.map_id = map_id
+  end
+
   opts.on("-o", "--outfile FILE", "Write JSON to this file") do |outfile|
     options.outfile = outfile
   end
@@ -56,6 +60,7 @@ end
 
 cgview_options = {
   config: options.config,
+  map_id: options.map_id,
 }
 
 if options.blast_paths

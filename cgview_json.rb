@@ -3,6 +3,7 @@ require 'yaml'
 require 'bio'
 require 'csv'
 require 'ostruct'
+require 'securerandom'
 
 
 class CGViewJSON
@@ -13,6 +14,7 @@ class CGViewJSON
                 :tracks, :debug, :captions
 
   def initialize(sequence_path, options={})
+    @map_id = options[:map_id] || SecureRandom.hex(20)
     @cgview = initialize_cgview
     @options = options
     @features = []
@@ -35,6 +37,7 @@ class CGViewJSON
     {
       version: VERSION,
       created: Time.now.strftime("%Y-%m-%d %H:%M:%S"),
+      id: @map_id,
       settings: {},
       sequence: {},
       captions: [],
@@ -114,7 +117,7 @@ class CGViewJSON
       # Create Feature
       @features.push({
         type: feature.feature,
-        label: name,
+        name: name,
         start: location.from,
         stop: location.to,
         strand: location.strand,
@@ -361,19 +364,19 @@ class CGViewJSON
 
 end
 
-debug = false
-# # debug = true
-# file = "data/sequences/NC_001823.gbk" # 70 KB
-file = "data/sequences/NC_000907.gbk" # 1.8 MB
-# # file = "data/sequences/NC_000913.gbk" # 4.6 MB
-config_path = 'scripts/cgview-builder/config_example.yaml'
-cgview = CGViewJSON.new(file, config: config_path, debug: debug)
-#
-# # file = "data/sequences/B_pert_TahomaI.gbk" # 4 MB
-# # config_path = 'scripts/cgview_json_builder/test_config.yaml'
-# # analysis_path = '/Users/jason/Desktop/merged_hits_cov.gff'
-# # cgview = CGViewJSON.new(file, config: config_path, debug: debug, analysis_path: analysis_path)
-#
-#
-cgview.write_json("/Users/jason/workspace/stothard_group/cgview-js/data/tests/builder.json")
+# debug = false
+# # # debug = true
+# # file = "data/sequences/NC_001823.gbk" # 70 KB
+# file = "data/sequences/NC_000907.gbk" # 1.8 MB
+# # # file = "data/sequences/NC_000913.gbk" # 4.6 MB
+# config_path = 'scripts/cgview-builder/config_example.yaml'
+# cgview = CGViewJSON.new(file, config: config_path, debug: debug)
+# #
+# # # file = "data/sequences/B_pert_TahomaI.gbk" # 4 MB
+# # # config_path = 'scripts/cgview_json_builder/test_config.yaml'
+# # # analysis_path = '/Users/jason/Desktop/merged_hits_cov.gff'
+# # # cgview = CGViewJSON.new(file, config: config_path, debug: debug, analysis_path: analysis_path)
+# #
+# #
+# cgview.write_json("/Users/jason/workspace/stothard_group/cgview-js/data/tests/builder.json")
 
