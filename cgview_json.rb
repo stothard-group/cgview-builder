@@ -80,7 +80,7 @@ class CGViewJSON
     when 'Bio::FastaFormat'
       @seq_type = :fasta
     else
-      print "\nCould not autodetect filetype. Trying deferent method..."
+      print "\nCould not autodetect filetype. Trying different method..."
       @seq_type = detect_filetype(path)
       if @seq_type != :raw
         case @seq_type
