@@ -116,8 +116,8 @@ class CGViewJSON
       break
     end
     case first_line
-    when /^LOCUS/ then :genbank
-    when /^ID/    then :embl
+    when /^LOCUS\s+/ then :genbank
+    when /^ID\s+/    then :embl
     when /^>/     then :fasta
     else               :raw
     end
@@ -173,6 +173,8 @@ class CGViewJSON
         feature[:legend] = config_items[feature[:type]][:name]
       elsif default_legend_name
         feature[:legend] = config_items[default_legend_name][:name]
+      else
+        feature[:legend] = feature[:type]
       end
     end
     # Intersection of legend names (They will be in the same order as the config
