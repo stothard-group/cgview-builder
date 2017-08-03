@@ -12,7 +12,7 @@ cgview:
         thickness: 1
         color: 'black'
   sequence:
-    font: 'san-serif, plain, 10'
+    font: 'sans-serif, plain, 14'
     color: 'black'
   featureTypes:
     - name: 'CDS'
@@ -28,10 +28,19 @@ cgview:
     - name: 'DEFAULT'
       decoration: 'arrow'
   captions:
-    - name: "title"
+    - name: "Title"
       position: "lower-center"
+      fontColor: "orange"
       backgroundColor: "rgba(255,255,255,0.4)"
       font: "sans-serif, plain, 24"
+    # - name: "More info"
+    #   position: "upper-left"
+    #   fontColor: "red"
+    #   backgroundColor: "rgba(255,255,255,0.4)"
+    #   font: "sans-serif, plain, 14"
+    #   items:
+    #     - name: 'Accession: 123456'
+    #     - name: 'Length: Short'
   legend:
     position: 'upper-right'
     alignment: 'left'
@@ -40,21 +49,43 @@ cgview:
     font: 'sans-serif, plain, 14'
     default: 'Other'
     items:
-      - text: 'CDS'
+      - name: 'CDS'
         swatchColor: 'rgba(0,0,153,0.5)'
-      - text: 'tRNA'
+        decoration: 'arrow'
+      - name: 'tRNA'
         swatchColor: 'rgba(153,0,153,0.5)'
-      - text: 'rRNA'
+      - name: 'rRNA'
         swatchColor: 'rgba(0,153,53,0.5)'
-      - text: 'Other'
+      - name: 'Other'
         swatchColor: 'rgba(153,153,153,0.5)'
   layout:
     tracks:
-      - name: 'CG Content'
-        position: 'inside'
-        contents:
-          plot:
-            sequence: 'gc_content'
+      # - name: 'Start/Stop Codons'
+      #   readingFrame: 'separated'
+      #   position: 'both'
+      #   contents:
+      #     type: 'feature'
+      #     from: 'sequence'
+      #     extract: 'start_stop_codons'
+      # - name: 'ORFs'
+      #   readingFrame: 'separated'
+      #   position: 'both'
+      #   contents:
+      #     type: 'feature'
+      #     from: 'sequence'
+      #     extract: 'orfs'
+      # - name: 'CG Content'
+      #   position: 'inside'
+      #   contents:
+      #     type: 'plot'
+      #     from: 'sequence'
+      #     extract: 'gc_content'
+      # - name: 'CG Skew'
+      #   position: 'inside'
+      #   contents:
+      #     type: 'plot'
+      #     from: 'sequence'
+      #     extract: 'gc_skew'
 
 
 

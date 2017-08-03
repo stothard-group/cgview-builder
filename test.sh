@@ -1,2 +1,2 @@
-# ruby cgview_json_builder.rb -s input/sequence -o out.json -c test_config.yaml -b input/results.txt,input/results.txt
-ruby cgview_json_builder.rb -s input/sequence -o out.json -c test_config.yaml -b input/results_cp.txt
+mkdir -p test/output
+ruby cgview_json_builder.rb -s test/input/sequence -o test/output/cgview.json -c test/input/config.yaml -b test/input/blast_results.txt

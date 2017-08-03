@@ -69,7 +69,7 @@ class CGViewJSON
   end
 
   def read_sequence(path)
-    puts "Reading sequence file..."
+    print "Reading sequence file..."
     flatfile = Bio::FlatFile.auto(path)
     # Determine Sequence file type
     case flatfile.dbclass.to_s
@@ -80,7 +80,19 @@ class CGViewJSON
     when 'Bio::FastaFormat'
       @seq_type = :fasta
     else
-      @seq_type = :raw
+      print "\nCould not autodetect filetype. Trying deferent method..."
+      @seq_type = detect_filetype(path)
+      if @seq_type != :raw
+        case @seq_type
+        when :genbank
+          flatfile = Bio::FlatFile.open(Bio::GenBank, path)
+        when :embl
+          flatfile = Bio::FlatFile.open(Bio::EMBL, path)
+        when :fasta
+          flatfile = Bio::FlatFile.open(Bio::FastaFormat, path)
+        end
+      end
+      # @seq_type = :raw
     end
 
     # Extract sequence
@@ -90,11 +102,30 @@ class CGViewJSON
       @seq_object = flatfile.first
       @sequence = @seq_object.to_biosequence.to_s.upcase
     end
+    puts "#{@sequence.length} bp [#{@seq_type}]"
+  end
+
+  # Simple method for detecting file type
+  # Mirrors JavaScript method in CGView Server
+  def detect_filetype(path)
+    first_line = ''
+    File.foreach(path) do |line|
+      next if line.empty?
+      next if line =~ /^#/
+      first_line = line
+      break
+    end
+    case first_line
+    when /^LOCUS/ then :genbank
+    when /^ID/    then :embl
+    when /^>/     then :fasta
+    else               :raw
+    end
   end
 
   def extract_features
-    puts "Extracting features..."
     return unless [:embl, :genbank].include?(@seq_type)
+    print "Extracting features..."
     features_to_skip = ['source', 'gene', 'exon']
     # TODO: look into complex features from xml-builder
     @seq_object.features.each do |feature|
@@ -124,10 +155,11 @@ class CGViewJSON
         source: "sequence-features"
       })
     end
+    puts @features.count
   end
 
   def build_legend
-    puts "Building legend..."
+    print "Building legend..."
     config_items = {}
     default_legend_name = nil
     # Read config file legend items
@@ -148,10 +180,11 @@ class CGViewJSON
     items = []
     feature_legend_names.each { |n| items.push config_items[n] }
     @cgview[:legend][:items] = items
+    puts feature_legend_names.count
   end
 
   def build_captions
-    puts "Building captions..."
+    print "Building captions..."
     @captions = []
     config_captions = @config[:captions].is_a?(Array) ? @config[:captions] : []
     config_captions.each do |caption|
@@ -162,6 +195,7 @@ class CGViewJSON
         @captions << caption
       end
     end
+    puts @captions.count
   end
 
   # Currently only reads blastn, blastx, tblastx results properly
@@ -295,7 +329,7 @@ class CGViewJSON
   end
 
   def build_tracks
-    puts "Building Tracks..."
+    print "Building Tracks..."
     @tracks << {
       name: 'Features',
       readingFrame: 'combined',
@@ -323,6 +357,7 @@ class CGViewJSON
         }
       }
     end
+    puts @tracks.count
   end
 
   def build_cgview
