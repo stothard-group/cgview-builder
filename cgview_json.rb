@@ -15,6 +15,7 @@ class CGViewJSON
 
   def initialize(sequence_path, options={})
     @map_id = options[:map_id] || SecureRandom.hex(20)
+    @map_name = options[:map_name]
     @cgview = initialize_cgview
     @options = options
     @features = []
@@ -27,6 +28,7 @@ class CGViewJSON
     extract_features
     read_gff_analysis(options[:analysis_path]) if options[:analysis_path]
     read_blasts(options[:blasts]) if options[:blasts]
+    read_contigs(options[:contigs]) if options[:contigs]
     build_legend
     build_captions
     build_tracks
@@ -38,6 +40,7 @@ class CGViewJSON
       version: VERSION,
       created: Time.now.strftime("%Y-%m-%d %H:%M:%S"),
       id: @map_id,
+      name: @map_name,
       settings: {},
       sequence: {},
       captions: [],
@@ -287,6 +290,38 @@ class CGViewJSON
     query
   end
 
+  def read_contigs(path)
+    puts "Creating contig features..."
+    # Create Features
+    start = 1
+    CSV.foreach(path, headers: true) do |row|
+      length = row['length'].to_i
+      @features.push({
+        type: 'Contig',
+        name: row['id'],
+        # meta: meta,
+        start: start,
+        stop: start + length - 1,
+        strand: row['strand'],
+        source: "contigs",
+      })
+      start += length.to_i
+    end
+
+    # Create Track
+    @contig_track = {
+      name: "Contigs",
+      position: 'inside',
+      strand: 'combined',
+      contents: {
+        type: 'feature',
+        from: 'source',
+        extract: "contigs"
+      }
+    }
+  end
+
+
   def read_gff_analysis(path)
     starts = []
     stops = []
@@ -343,6 +378,10 @@ class CGViewJSON
         extract: 'sequence-features'
       }
     }
+
+    if @contig_track
+      @tracks << @contig_track
+    end
 
     unless @blast_tracks.empty?
       @tracks += @blast_tracks

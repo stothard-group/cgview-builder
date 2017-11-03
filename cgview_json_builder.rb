@@ -21,6 +21,10 @@ optparse = OptionParser.new do |opts|
     options.map_id = map_id
   end
 
+  opts.on("-n", "--map_name STRING", "Name for map") do |map_name|
+    options.map_name = map_name
+  end
+
   opts.on("-o", "--outfile FILE", "Write JSON to this file") do |outfile|
     options.outfile = outfile
   end
@@ -34,6 +38,10 @@ optparse = OptionParser.new do |opts|
 
   opts.on("-b", "--blasts FILEs", "One or more blast files (separated by ,)") do |blast_paths|
     options.blast_paths = blast_paths
+  end
+
+  opts.on("-t", "--contigs FILE", "A CSV file describing contigs that will be added as a track") do |contigs|
+    options.contigs = contigs
   end
 
   # This will print an options summary.
@@ -61,6 +69,8 @@ end
 cgview_options = {
   config: options.config,
   map_id: options.map_id,
+  map_name: options.map_name,
+  contigs: options.contigs,
 }
 
 if options.blast_paths
