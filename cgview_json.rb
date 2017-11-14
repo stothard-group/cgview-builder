@@ -147,7 +147,7 @@ class CGViewJSON
       # Feature Location
       location = locations.first
       # Skip features with the same length as the sequence
-      next if location.from == 1 && location.to == @seq_object.length
+      next if location.from == 1 && location.to == @seq_object.seq.length
       # Create Feature
       @features.push({
         type: feature.feature,
