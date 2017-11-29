@@ -244,10 +244,10 @@ class CGViewJSON
 
         # Collect meta data
         meta = {
-          identity: row[2],
-          mimatches: row[4],
-          evalue: row[10],
-          score: row[11]
+          identity: row[2].to_f,
+          mimatches: row[4].to_i,
+          evalue: row[10].to_f,
+          score: row[11].to_i
         }
 
         if start > stop
@@ -261,8 +261,10 @@ class CGViewJSON
           start: offset + start,
           stop: offset + stop,
           strand: strand,
+          score: (meta[:identity] / 100).round(3),
           source: "blast_#{num}"
         })
+          puts (meta[:identity] / 100).round(3)
       end
 
       # Create Track
