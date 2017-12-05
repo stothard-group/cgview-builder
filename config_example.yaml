@@ -66,7 +66,7 @@ cgview:
       #   contents:
       #     type: 'feature'
       #     from: 'sequence'
-      #     extract: 'start_stop_codons'
+      #     extract: 'start-stop-codons'
       # - name: 'ORFs'
       #   readingFrame: 'separated'
       #   position: 'both'
@@ -79,13 +79,13 @@ cgview:
       #   contents:
       #     type: 'plot'
       #     from: 'sequence'
-      #     extract: 'gc_content'
+      #     extract: 'gc-content'
       # - name: 'CG Skew'
       #   position: 'inside'
       #   contents:
       #     type: 'plot'
       #     from: 'sequence'
-      #     extract: 'gc_skew'
+      #     extract: 'gc-skew'
 
 
 
