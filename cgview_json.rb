@@ -315,6 +315,7 @@ class CGViewJSON
       name: "Contigs",
       position: 'inside',
       strand: 'combined',
+      thicknessRatio: 0.5,
       contents: {
         type: 'feature',
         from: 'source',
