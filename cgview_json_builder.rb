@@ -40,7 +40,7 @@ optparse = OptionParser.new do |opts|
     options.blast_paths = blast_paths
   end
 
-  opts.on("-t", "--contigs FILE", "A CSV file describing the contigs") do |contigs|
+  opts.on("-t", "--contigs FILE", "A CSV file describing the contigs: NOT IMPLEMENTED YET") do |contigs|
     options.contigs = contigs
   end
 

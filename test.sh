@@ -2,8 +2,11 @@ mkdir -p test/output
 # Building from GenBank file and blast results
 # ruby cgview_json_builder.rb -s test/input/sequence -o test/output/cgview.json -c test/input/config.yaml -b test/input/blast_results.txt
 
-# Bulding from Genbank Contigs
-ruby cgview_json_builder.rb -s test/input/chloroflexi_contigs.gbk -o test/output/cgview_contigs.json -c test/input/config.yaml -t test/input/contigs.csv
+# Bulding from Genbank Contigs with contig file describing contigs
+# ruby cgview_json_builder.rb -s test/input/chloroflexi_contigs.gbk -o test/output/cgview_contigs.json -c test/input/config.yaml -t test/input/contigs.csv
+
+# Building from Genbank Contigs with no optional contig file
+ruby cgview_json_builder.rb -s test/input/chloroflexi_contigs.gbk -o test/output/cgview_contigs_no_file.json -c test/input/config.yaml
 
 
 

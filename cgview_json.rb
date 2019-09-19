@@ -113,50 +113,79 @@ class CGViewJSON
       sequence_num += 1
       sequence_length = @sequence.length
     else
-      if self.contigs?
-        # puts @contigs
-        print "Contigs:"
-        flatfile.each_with_index do |seq_object, i|
-          sequence_num += 1
-          print "."
-          # find contig for this seq_object using seq_object.entry_id
-          # add sequence to contig object
-          #   - if it's reversed, then complement the sequence
-          id = seq_object.entry_id
-          contig = @contigs.find { |c| c[:name] == id }
-          # TODO: complement if needed
-          biosequence = seq_object.to_biosequence
-          if contig[:orientation] == '-'
-            biosequence.na
-            complement_biosequence = biosequence.complement
-            contig[:seq] = complement_biosequence.to_s.upcase
-          else
-            contig[:seq] = biosequence.to_s.upcase
-          end
-          # puts " #{i}:#{contig[:seq][0..10]}"
-          # puts contig
-          unless contig
-            fail "Cound not find contig '#{id}'; sequence index (base-1): #{i+1}"
-          end
-          unless contig[:length] == seq_object.length
-            fail "Contig '#{id}' length '#{contig[:length]}' != sequence length '#{seq_object.length}'"
-          end
-          sequence_length += seq_object.length
-
-          extract_features(seq_object, contig)
-          if i == 0
-            @map_name ||= seq_object.entry_id
-          end
-        end
-        puts ""
-      else
-        seq_object = flatfile.first
-        @sequence = seq_object.to_biosequence.to_s.upcase
-        extract_features(seq_object)
+      @contigs = []
+      flatfile.each_with_index do |seq_object, i|
         sequence_num += 1
-        sequence_length = @sequence.length
-        @map_name ||= seq_object.entry_id
+        print "."
+        # id = seq_object.entry_id
+        biosequence = seq_object.to_biosequence
+        seq = biosequence.to_s
+        contig = {
+          id: seq_object.entry_id,
+          name: seq_object.entry_id,
+          orientation: '+',
+          length: seq.length,
+          seq: seq.upcase
+        }
+        # contig[:seq] = biosequence.to_s.upcase
+        # sequence_length += seq_object.length
+        sequence_length += seq.length
+
+        extract_features(seq_object, contig)
+        if i == 0
+          @map_name ||= seq_object.entry_id
+        end
+        @contigs << contig
       end
+      puts ""
+
+      # NOTE: This was the method to take only the first contig
+      # seq_object = flatfile.first
+      # @sequence = seq_object.to_biosequence.to_s.upcase
+      # extract_features(seq_object)
+      # sequence_num += 1
+      # sequence_length = @sequence.length
+      # @map_name ||= seq_object.entry_id
+
+      # TODO: implement the ability to alter the contig order and direction
+      #       - by default we grab all the contigs from the input sequence file
+      #       - We could use an optional contig file (like we did in the past) to describe order/orientation
+      # if self.contigs?
+      #   # puts @contigs
+      #   print "Contigs:"
+      #   flatfile.each_with_index do |seq_object, i|
+      #     sequence_num += 1
+      #     print "."
+      #     # find contig for this seq_object using seq_object.entry_id
+      #     # add sequence to contig object
+      #     #   - if it's reversed, then complement the sequence
+      #     id = seq_object.entry_id
+      #     contig = @contigs.find { |c| c[:name] == id }
+      #     # TODO: complement if needed
+      #     biosequence = seq_object.to_biosequence
+      #     if contig[:orientation] == '-'
+      #       biosequence.na
+      #       complement_biosequence = biosequence.complement
+      #       contig[:seq] = complement_biosequence.to_s.upcase
+      #     else
+      #       contig[:seq] = biosequence.to_s.upcase
+      #     end
+      #     # puts " #{i}:#{contig[:seq][0..10]}"
+      #     # puts contig
+      #     unless contig
+      #       fail "Cound not find contig '#{id}'; sequence index (base-1): #{i+1}"
+      #     end
+      #     unless contig[:length] == seq_object.length
+      #       fail "Contig '#{id}' length '#{contig[:length]}' != sequence length '#{seq_object.length}'"
+      #     end
+      #     sequence_length += seq_object.length
+      #
+      #     extract_features(seq_object, contig)
+      #     if i == 0
+      #       @map_name ||= seq_object.entry_id
+      #     end
+      #   end
+      #   puts ""
     end
     # puts "Count: #{sequence_num}, Length: #{sequence_length} bp, Type: #{@seq_type}"
     puts "Extracted Sequences: #{sequence_num}, Length: #{sequence_length} bp, Type: #{@seq_type}"
@@ -213,12 +242,12 @@ class CGViewJSON
       stop = location.to
       strand = location.strand
 
-      # Handle contig
-      if contig && contig[:orientation] == '-'
-        strand = (strand == 1) ? -1 : 1
-        stop = contig[:length] - location.from + 1
-        start = contig[:length] - location.to + 1
-      end
+      # Handle contig: ONLY DOD THIS IF WE HAVE ORIENATION FROM OPTIONAL CONTIG FILE
+      # if contig && contig[:orientation] == '-'
+      #   strand = (strand == 1) ? -1 : 1
+      #   stop = contig[:length] - location.from + 1
+      #   start = contig[:length] - location.to + 1
+      # end
 
       # Create Feature
       feature = {
@@ -515,12 +544,12 @@ class CGViewJSON
       @cgview[:sequence][:seq] = "SEQUENCE WOULD GO HERE"
       @cgview[:features] += @features[1..5]
     else
-      if contigs?
+      # if contigs?
         @cgview[:sequence][:contigs] = @contigs
-      else
-        # FIXME: this will become "chromosome"
-        @cgview[:sequence][:seq] = @sequence
-      end
+      # else
+      #   # FIXME: this will become "chromosome"
+      #   @cgview[:sequence][:seq] = @sequence
+      # end
       @cgview[:features] += @features
     end
     @cgview[:tracks] = @tracks + @cgview[:tracks]
