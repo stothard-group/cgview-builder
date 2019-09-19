@@ -1,16 +1,15 @@
 cgview:
-  settings:
-    ruler:
-      font: 'sans-serif, plain, 10'
-      fontColor: 'black'
-    backbone:
-      color: 'grey'
-      thickness: 5
-    dividers:
-      slot:
-        show: true
-        thickness: 1
-        color: 'black'
+  ruler:
+    font: 'sans-serif, plain, 10'
+    fontColor: 'black'
+  backbone:
+    color: 'grey'
+    thickness: 5
+  dividers:
+    slot:
+      show: true
+      thickness: 1
+      color: 'black'
   sequence:
     font: 'sans-serif, plain, 14'
     color: 'black'
@@ -58,8 +57,7 @@ cgview:
         swatchColor: 'rgba(0,153,53,0.5)'
       - name: 'Other'
         swatchColor: 'rgba(153,153,153,0.5)'
-  layout:
-    tracks:
+  tracks:
       # - name: 'Start/Stop Codons'
       #   readingFrame: 'separated'
       #   position: 'both'

@@ -1,16 +1,15 @@
 cgview:
-  settings:
-    ruler:
-      font: 'sans-serif, plain, 10'
-      fontColor: 'black'
-    backbone:
-      color: 'grey'
-      thickness: 5
-    dividers:
-      slot:
-        show: true
-        thickness: 1
-        color: 'black'
+  ruler:
+    font: 'sans-serif, plain, 10'
+    fontColor: 'black'
+  backbone:
+    color: 'grey'
+    thickness: 5
+  dividers:
+    slot:
+      show: true
+      thickness: 1
+      color: 'black'
   sequence:
     font: 'sans-serif, plain, 14'
     color: 'black'
@@ -29,12 +28,12 @@ cgview:
       decoration: 'arrow'
   captions:
     - name: "Title"
-      position: "lower-center"
+      position: "bottom-center"
       fontColor: "orange"
       backgroundColor: "rgba(255,255,255,0.4)"
       font: "sans-serif, plain, 24"
     # - name: "More info"
-    #   position: "upper-left"
+    #   position: "top-left"
     #   fontColor: "red"
     #   backgroundColor: "rgba(255,255,255,0.4)"
     #   font: "sans-serif, plain, 14"
@@ -42,7 +41,7 @@ cgview:
     #     - name: 'Accession: 123456'
     #     - name: 'Length: Short'
   legend:
-    position: 'upper-right'
+    position: 'top-right'
     alignment: 'left'
     fontColor: 'black'
     backgroundColor: 'rgba(255,255,255,0.75)'
@@ -58,8 +57,7 @@ cgview:
         swatchColor: 'rgba(0,153,53,0.5)'
       - name: 'Other'
         swatchColor: 'rgba(153,153,153,0.5)'
-  layout:
-    tracks:
+  tracks:
       # - name: 'Start/Stop Codons'
       #   readingFrame: 'separated'
       #   position: 'both'

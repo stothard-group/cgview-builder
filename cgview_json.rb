@@ -11,7 +11,7 @@ class CGViewJSON
   VERSION = '0.1'
 
   attr_accessor :config, :options, :seq_object, :sequence, :cgview, :seq_type, :features,
-                :tracks, :debug, :captions
+                :tracks, :debug, :captions, :contigs
 
   def initialize(sequence_path, options={})
     @map_id = options[:map_id] || SecureRandom.hex(20)
@@ -24,11 +24,11 @@ class CGViewJSON
     @blast_tracks = []
     @debug = options[:debug]
     @config = options[:config] ? read_config(options[:config]) : {}
+    @contigs = options[:contigs] ? read_contigs(options[:contigs]) : []
     read_sequence(sequence_path)
-    extract_features
+    # extract_features
     read_gff_analysis(options[:analysis_path]) if options[:analysis_path]
     read_blasts(options[:blasts]) if options[:blasts]
-    read_contigs(options[:contigs]) if options[:contigs]
     build_legend
     build_captions
     build_tracks
@@ -42,21 +42,27 @@ class CGViewJSON
       id: @map_id,
       name: @map_name,
       settings: {},
+      backbone: {},
+      ruler: {},
+      dividers: {},
       sequence: {},
       captions: [],
       legend: {},
       features: [],
-      layout: { tracks: [] }
+      tracks: []
     }
 
   end
 
   def read_config(path)
     config = symbolize(YAML.load_file(path)['cgview'])
-    @cgview[:settings] = config[:settings]
+    @cgview[:settings] = config[:settings] if config[:settings]
+    @cgview[:backbone] = config[:backbone] if config[:backbone]
+    @cgview[:ruler] = config[:ruler] if config[:ruler]
+    @cgview[:dividers] = config[:dividers] if config[:dividers]
     @cgview[:sequence] = config[:sequence]
     @cgview[:legend] = config[:legend]
-    @cgview[:layout][:tracks] = config[:layout] && config[:layout][:tracks] || []
+    @cgview[:tracks] = config[:tracks] || []
     config
   end
 
@@ -72,7 +78,8 @@ class CGViewJSON
   end
 
   def read_sequence(path)
-    print "Reading sequence file..."
+    # print "Reading sequence file..."
+    puts "Extracting sequence and features..."
     flatfile = Bio::FlatFile.auto(path)
     # Determine Sequence file type
     case flatfile.dbclass.to_s
@@ -99,13 +106,61 @@ class CGViewJSON
     end
 
     # Extract sequence
+    sequence_num = 0
+    sequence_length = 0
     if @seq_type == :raw
       @sequence = File.read(path).gsub(/[^A-Za-z]/, '').upcase
+      sequence_num += 1
+      sequence_length = @sequence.length
     else
-      @seq_object = flatfile.first
-      @sequence = @seq_object.to_biosequence.to_s.upcase
+      if self.contigs?
+        # puts @contigs
+        print "Contigs:"
+        flatfile.each_with_index do |seq_object, i|
+          sequence_num += 1
+          print "."
+          # find contig for this seq_object using seq_object.entry_id
+          # add sequence to contig object
+          #   - if it's reversed, then complement the sequence
+          id = seq_object.entry_id
+          contig = @contigs.find { |c| c[:name] == id }
+          # TODO: complement if needed
+          biosequence = seq_object.to_biosequence
+          if contig[:orientation] == '-'
+            biosequence.na
+            complement_biosequence = biosequence.complement
+            contig[:seq] = complement_biosequence.to_s.upcase
+          else
+            contig[:seq] = biosequence.to_s.upcase
+          end
+          # puts " #{i}:#{contig[:seq][0..10]}"
+          # puts contig
+          unless contig
+            fail "Cound not find contig '#{id}'; sequence index (base-1): #{i+1}"
+          end
+          unless contig[:length] == seq_object.length
+            fail "Contig '#{id}' length '#{contig[:length]}' != sequence length '#{seq_object.length}'"
+          end
+          sequence_length += seq_object.length
+
+          extract_features(seq_object, contig)
+          if i == 0
+            @map_name ||= seq_object.entry_id
+          end
+        end
+        puts ""
+      else
+        seq_object = flatfile.first
+        @sequence = seq_object.to_biosequence.to_s.upcase
+        extract_features(seq_object)
+        sequence_num += 1
+        sequence_length = @sequence.length
+        @map_name ||= seq_object.entry_id
+      end
     end
-    puts "#{@sequence.length} bp [#{@seq_type}]"
+    # puts "Count: #{sequence_num}, Length: #{sequence_length} bp, Type: #{@seq_type}"
+    puts "Extracted Sequences: #{sequence_num}, Length: #{sequence_length} bp, Type: #{@seq_type}"
+    puts "Extracted Features: #{@features.count}"
   end
 
   # Simple method for detecting file type
@@ -126,17 +181,22 @@ class CGViewJSON
     end
   end
 
-  def extract_features
+  def extract_features(seq_object, contig=nil)
+    # if contig
+    #   puts(contig[:id], contig[:name], contig[:orientation])
+    # end
     return unless [:embl, :genbank].include?(@seq_type)
-    print "Extracting features..."
+    # print "Extracting features..."
     features_to_skip = ['source', 'gene', 'exon']
     # TODO: look into complex features from xml-builder
-    @seq_object.features.each do |feature|
+    seq_object.features.each do |feature|
       next if features_to_skip.include?(feature.feature)
       next if feature.position.nil?
       locations = Bio::Locations.new(feature.position)
       unless locations.first == locations.last
         # FIXME Complex Feature...What Now
+        # - Each location should become a feature
+        # - The features could have compoundfeatures attribute to link to join features
         next
       end
       # Feature Name
@@ -144,21 +204,39 @@ class CGViewJSON
       # However, there is a risk some information is lost when two or more qualifiers are the same.
       qualifiers = feature.assoc
       name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || feature.feature
+      # FIXME: addtional qualifiers could become part of meta tag called 'qualifiers'
       # Feature Location
       location = locations.first
       # Skip features with the same length as the sequence
-      next if location.from == 1 && location.to == @seq_object.seq.length
+      next if location.from == 1 && location.to == seq_object.seq.length
+      start = location.from
+      stop = location.to
+      strand = location.strand
+
+      # Handle contig
+      if contig && contig[:orientation] == '-'
+        strand = (strand == 1) ? -1 : 1
+        stop = contig[:length] - location.from + 1
+        start = contig[:length] - location.to + 1
+      end
+
       # Create Feature
-      @features.push({
+      feature = {
         type: feature.feature,
         name: name,
-        start: location.from,
-        stop: location.to,
-        strand: location.strand,
+        start: start,
+        stop: stop,
+        strand: strand,
+        # FIXME: source becomes collection
+        # FIXME: more collections: genbank-cds, genbank-trna, ensembl-cds, etc
         source: "sequence-features"
-      })
+      }
+      if contig
+        feature[:contig] = contig[:id]
+      end
+      @features.push(feature)
     end
-    puts @features.count
+    # puts @features.count
   end
 
   def build_legend
@@ -262,6 +340,7 @@ class CGViewJSON
           stop: offset + stop,
           strand: strand,
           score: (meta[:identity] / 100).round(3),
+          # FIXME: source becomes collection
           source: "blast_#{num}"
         })
           puts (meta[:identity] / 100).round(3)
@@ -274,6 +353,7 @@ class CGViewJSON
         strand: 'combined',
         contents: {
           type: 'feature',
+          # FIXME: source becomes collection
           from: 'source',
           extract: "blast_#{num}"
         }
@@ -292,7 +372,28 @@ class CGViewJSON
     query
   end
 
+  # Config file format:
+  # id,index,original_index,length,strand
   def read_contigs(path)
+    puts "Reading contigs..."
+    contigs = []
+    CSV.foreach(path, headers: true) do |row|
+      length = row['length'].to_i
+      contigs.push({
+        id: "cgv-contig-#{row['original_index']}",
+        name: row['id'],
+        length: length,
+        orientation: row['strand']
+      })
+    end
+    contigs
+  end
+
+  def contigs?
+    @contigs && @contigs.length > 0
+  end
+
+  def read_contigs_OLD(path)
     puts "Creating contig features..."
     # Create Features
     start = 1
@@ -305,6 +406,7 @@ class CGViewJSON
         start: start,
         stop: start + length - 1,
         strand: row['strand'],
+        # FIXME: source becomes collection
         source: "contigs",
       })
       start += length.to_i
@@ -318,6 +420,7 @@ class CGViewJSON
       thicknessRatio: 0.5,
       contents: {
         type: 'feature',
+        # FIXME: source becomes collection
         from: 'source',
         extract: "contigs"
       }
@@ -377,14 +480,15 @@ class CGViewJSON
       position: 'both',
       contents: {
         type: 'feature',
+        # FIXME: source becomes collection
         from: 'source',
         extract: 'sequence-features'
       }
     }
 
-    if @contig_track
-      @tracks << @contig_track
-    end
+    # if @contig_track
+    #   @tracks << @contig_track
+    # end
 
     unless @blast_tracks.empty?
       @tracks += @blast_tracks
@@ -396,6 +500,7 @@ class CGViewJSON
         position: 'inside',
         contents: {
           type: 'plot',
+          # FIXME: source becomes collection
           from: 'source',
           extract: 'analysis'
         }
@@ -410,11 +515,15 @@ class CGViewJSON
       @cgview[:sequence][:seq] = "SEQUENCE WOULD GO HERE"
       @cgview[:features] += @features[1..5]
     else
-      @cgview[:sequence][:seq] = @sequence
+      if contigs?
+        @cgview[:sequence][:contigs] = @contigs
+      else
+        # FIXME: this will become "chromosome"
+        @cgview[:sequence][:seq] = @sequence
+      end
       @cgview[:features] += @features
     end
-    # @cgview[:layout][:tracks] += @tracks
-    @cgview[:layout][:tracks] = @tracks + @cgview[:layout][:tracks]
+    @cgview[:tracks] = @tracks + @cgview[:tracks]
     unless @plots.empty?
       @cgview[:plots] = @plots
     end
@@ -424,11 +533,12 @@ class CGViewJSON
 
 
   def map_title
-    if @options[:mapTitle]
-      @options[:mapTitle]
+    if @map_name
+      @map_name
     elsif @seq_type == :raw
       ''
     else
+      # FIXME: there will be no more seq_object
       @seq_object.definition
     end
   end
@@ -441,6 +551,15 @@ class CGViewJSON
     File.open(path, 'w') { |f| f.write(self.to_json) }
   end
 
+end
+
+# class Contig
+#   attr_accessor :id, :name, :orientation, :seq, :length
+# end
+
+def fail(msg)
+  puts msg
+  exit
 end
 
 # debug = false
