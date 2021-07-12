@@ -17,7 +17,7 @@ gem install bio
 ```
 - Confirm installation by running the test script:
 ```bash
-./test.sh
+./test/test.sh
 ```
 
 
@@ -44,4 +44,8 @@ ruby cgview_builder_cli.rb [OPTIONS]
                                        Print version
         -h, -?, --help                 Show this message
 
+## Config YAML
+
+An optional config YAML can be provided to CGViewBuilder. This file will can be
+used to set default values for the generated JSON (e.g. colors, legends, captions, etc).
 
