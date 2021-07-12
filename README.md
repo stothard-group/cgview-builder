@@ -1,7 +1,7 @@
 # CGView Builder
 
 CGViewBuilder is a ruby script that generates JSON files for
-[CGView.js](cgview.ca) from sequence files (e.g. GenBank, EMBL, FASTA).
+[CGView.js](http://cgview.ca) from sequence files (e.g. GenBank, EMBL, FASTA).
 
 CGViewBuilder consists of two files:
 
@@ -11,7 +11,7 @@ CGViewBuilder consists of two files:
 ## Installation
 
 - Download the git repository.
-- Install CGViewBuilder's one dependency [BioRuby](bioruby.org):
+- Install CGViewBuilder's one dependency [BioRuby](https://bioruby.org):
 ```bash
 gem install bio
 ```
