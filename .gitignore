@@ -1,3 +1,4 @@
 test/trouble_shooting/*
-vendor
+.gitignore
+.ruby-version
 

@@ -29,21 +29,19 @@ ruby cgview_builder_cli.rb [OPTIONS]
 
 ## Command line options
 
-```bash
-Usage: cgview_builder_cli.rb [options]
+    Usage: cgview_builder_cli.rb [options]
 
-Required Arguments:
-    -s, --sequence FILE            Sequence File [GenBank for now]
-    -m, --map_id STRING            ID for map [Default: Random 40 character hex string]
-    -n, --map_name STRING          Name for map
-    -o, --outfile FILE             Write JSON to this file
+    Required Arguments:
+        -s, --sequence FILE            Sequence File [GenBank for now]
+        -m, --map_id STRING            ID for map [Default: Random 40 character hex string]
+        -n, --map_name STRING          Name for map
+        -o, --outfile FILE             Write JSON to this file
 
-General Options:
-    -c, --config FILE              Config File
-    -b, --blasts FILEs             One or more blast files (separated by ,)
-    -v, --version
-                                   Print version
-    -h, -?, --help                 Show this message
-```
+    General Options:
+        -c, --config FILE              Config File
+        -b, --blasts FILEs             One or more blast files (separated by ,)
+        -v, --version
+                                       Print version
+        -h, -?, --help                 Show this message
 
 
