@@ -1,13 +1,12 @@
 cgview:
   ruler:
     font: 'sans-serif, plain, 10'
-    fontColor: 'black'
+    color: 'black'
   backbone:
     color: 'grey'
     thickness: 5
   dividers:
     slot:
-      show: true
       thickness: 1
       color: 'black'
   sequence:
@@ -32,21 +31,13 @@ cgview:
       fontColor: "orange"
       backgroundColor: "rgba(255,255,255,0.4)"
       font: "sans-serif, plain, 24"
-    # - name: "More info"
-    #   position: "top-left"
-    #   fontColor: "red"
-    #   backgroundColor: "rgba(255,255,255,0.4)"
-    #   font: "sans-serif, plain, 14"
-    #   items:
-    #     - name: 'Accession: 123456'
-    #     - name: 'Length: Short'
   legend:
     position: 'top-right'
     alignment: 'left'
-    fontColor: 'black'
     backgroundColor: 'rgba(255,255,255,0.75)'
-    font: 'sans-serif, plain, 14'
-    default: 'Other'
+    defaultFont: 'sans-serif, plain, 14'
+    # default: 'Other'
+    defaultFontColor: 'black'
     items:
       - name: 'CDS'
         swatchColor: 'rgba(0,0,153,0.5)'
@@ -58,32 +49,16 @@ cgview:
       - name: 'Other'
         swatchColor: 'rgba(153,153,153,0.5)'
   tracks:
-      # - name: 'Start/Stop Codons'
-      #   readingFrame: 'separated'
-      #   position: 'both'
-      #   contents:
-      #     type: 'feature'
-      #     from: 'sequence'
-      #     extract: 'start-stop-codons'
-      # - name: 'ORFs'
-      #   readingFrame: 'separated'
-      #   position: 'both'
-      #   contents:
-      #     type: 'feature'
-      #     from: 'sequence'
-      #     extract: 'orfs'
       # - name: 'CG Content'
       #   position: 'inside'
-      #   contents:
-      #     type: 'plot'
-      #     from: 'sequence'
-      #     extract: 'gc-content'
+      #   dataType: 'plot'
+      #   dataFrom: 'sequence'
+      #   dataExtract: 'gc-content'
       # - name: 'CG Skew'
       #   position: 'inside'
-      #   contents:
-      #     type: 'plot'
-      #     from: 'sequence'
-      #     extract: 'gc-skew'
+      #   dataType: 'plot'
+      #   dataFrom: 'sequence'
+      #   dataExtract: 'gc-skew'
 
 
 

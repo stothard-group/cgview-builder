@@ -5,12 +5,11 @@ require 'csv'
 require 'ostruct'
 require 'securerandom'
 
-
-class CGViewJSON
+class CGViewBuilder
 
   VERSION = '0.1'
 
-  attr_accessor :config, :options, :seq_object, :sequence, :cgview, :seq_type, :features,
+  attr_accessor :config, :options, :sequence, :cgview, :seq_type, :features,
                 :tracks, :debug, :captions, :contigs
 
   def initialize(sequence_path, options={})
@@ -24,9 +23,8 @@ class CGViewJSON
     @blast_tracks = []
     @debug = options[:debug]
     @config = options[:config] ? read_config(options[:config]) : {}
-    @contigs = options[:contigs] ? read_contigs(options[:contigs]) : []
     read_sequence(sequence_path)
-    # extract_features
+    build_genetic_code
     read_gff_analysis(options[:analysis_path]) if options[:analysis_path]
     read_blasts(options[:blasts]) if options[:blasts]
     build_legend
@@ -41,6 +39,7 @@ class CGViewJSON
       created: Time.now.strftime("%Y-%m-%d %H:%M:%S"),
       id: @map_id,
       name: @map_name,
+      geneticCode: 11,
       settings: {},
       backbone: {},
       ruler: {},
@@ -115,11 +114,11 @@ class CGViewJSON
     else
       @contigs = []
       flatfile.each_with_index do |seq_object, i|
-        sequence_num += 1
-        print "."
-        # id = seq_object.entry_id
         biosequence = seq_object.to_biosequence
         seq = biosequence.to_s
+        next if seq.empty?
+        sequence_num += 1
+        print "."
         contig = {
           id: seq_object.entry_id,
           name: seq_object.entry_id,
@@ -127,67 +126,17 @@ class CGViewJSON
           length: seq.length,
           seq: seq.upcase
         }
-        # contig[:seq] = biosequence.to_s.upcase
-        # sequence_length += seq_object.length
         sequence_length += seq.length
 
         extract_features(seq_object, contig)
         if i == 0
           @map_name ||= seq_object.entry_id
+          @cgview[:name] = @map_name
         end
         @contigs << contig
       end
       puts ""
-
-      # NOTE: This was the method to take only the first contig
-      # seq_object = flatfile.first
-      # @sequence = seq_object.to_biosequence.to_s.upcase
-      # extract_features(seq_object)
-      # sequence_num += 1
-      # sequence_length = @sequence.length
-      # @map_name ||= seq_object.entry_id
-
-      # TODO: implement the ability to alter the contig order and direction
-      #       - by default we grab all the contigs from the input sequence file
-      #       - We could use an optional contig file (like we did in the past) to describe order/orientation
-      # if self.contigs?
-      #   # puts @contigs
-      #   print "Contigs:"
-      #   flatfile.each_with_index do |seq_object, i|
-      #     sequence_num += 1
-      #     print "."
-      #     # find contig for this seq_object using seq_object.entry_id
-      #     # add sequence to contig object
-      #     #   - if it's reversed, then complement the sequence
-      #     id = seq_object.entry_id
-      #     contig = @contigs.find { |c| c[:name] == id }
-      #     # TODO: complement if needed
-      #     biosequence = seq_object.to_biosequence
-      #     if contig[:orientation] == '-'
-      #       biosequence.na
-      #       complement_biosequence = biosequence.complement
-      #       contig[:seq] = complement_biosequence.to_s.upcase
-      #     else
-      #       contig[:seq] = biosequence.to_s.upcase
-      #     end
-      #     # puts " #{i}:#{contig[:seq][0..10]}"
-      #     # puts contig
-      #     unless contig
-      #       fail "Cound not find contig '#{id}'; sequence index (base-1): #{i+1}"
-      #     end
-      #     unless contig[:length] == seq_object.length
-      #       fail "Contig '#{id}' length '#{contig[:length]}' != sequence length '#{seq_object.length}'"
-      #     end
-      #     sequence_length += seq_object.length
-      #
-      #     extract_features(seq_object, contig)
-      #     if i == 0
-      #       @map_name ||= seq_object.entry_id
-      #     end
-      #   end
-      #   puts ""
     end
-    # puts "Count: #{sequence_num}, Length: #{sequence_length} bp, Type: #{@seq_type}"
     puts "Extracted Sequences: #{sequence_num}, Length: #{sequence_length} bp, Type: #{@seq_type}"
     puts "Extracted Features: #{@features.count}"
   end
@@ -205,8 +154,8 @@ class CGViewJSON
     case first_line
     when /^LOCUS\s+/ then :genbank
     when /^ID\s+/    then :embl
-    when /^>/     then :fasta
-    else               :raw
+    when /^>/        then :fasta
+    else                  :raw
     end
   end
 
@@ -219,7 +168,8 @@ class CGViewJSON
     features_to_skip = ['source', 'gene', 'exon']
     # TODO: look into complex features from xml-builder
     seq_object.features.each do |feature|
-      next if features_to_skip.include?(feature.feature)
+      featureType = feature.feature
+      next if features_to_skip.include?(featureType)
       next if feature.position.nil?
       locations = Bio::Locations.new(feature.position)
       unless locations.first == locations.last
@@ -232,7 +182,11 @@ class CGViewJSON
       # NOTE: This converts the array of qualifiers to a easily accessible hash.
       # However, there is a risk some information is lost when two or more qualifiers are the same.
       qualifiers = feature.assoc
-      name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || feature.feature
+      name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || featureType
+      # This is fix issues if the user has unusual characters in the note
+      name.force_encoding(Encoding::UTF_8)
+      codon_start = qualifiers['codon_start']
+      transl_table = qualifiers['transl_table']
       # FIXME: addtional qualifiers could become part of meta tag called 'qualifiers'
       # Feature Location
       location = locations.first
@@ -242,34 +196,43 @@ class CGViewJSON
       stop = location.to
       strand = location.strand
 
-      # Handle contig: ONLY DOD THIS IF WE HAVE ORIENATION FROM OPTIONAL CONTIG FILE
-      # if contig && contig[:orientation] == '-'
-      #   strand = (strand == 1) ? -1 : 1
-      #   stop = contig[:length] - location.from + 1
-      #   start = contig[:length] - location.to + 1
-      # end
-
       # Create Feature
-      feature = {
-        type: feature.feature,
+      cgv_feature = {
+        type: featureType,
         name: name,
         start: start,
         stop: stop,
         strand: strand,
-        # FIXME: source becomes collection
-        # FIXME: more collections: genbank-cds, genbank-trna, ensembl-cds, etc
-        source: "sequence-features"
+        source: "#{@seq_type}-features"
       }
       if contig
-        feature[:contig] = contig[:id]
+        cgv_feature[:contig] = contig[:id]
       end
-      @features.push(feature)
+      if codon_start && codon_start != 1
+        cgv_feature[:codonStart] = codon_start
+      end
+      if featureType == 'CDS'
+        # The default genetic code for GenBank/EMBL is "1"
+        genetic_code = transl_table || 1
+        cgv_feature[:geneticCode] = genetic_code
+        # # Check Translation
+        # aa_translated = seq_object.naseq.splicing(feature.position).translate(codon_start, genetic_code.to_i)
+        # aa_from_file = qualifiers['translation']
+        # aa_translated.sub!(/\*$/, '')
+        # aa_translated.sub!(/^./, 'M')
+        # if aa_from_file != aa_translated
+        #   puts "Warning: /translation mismatch: #{name}: #{start}-#{stop}, #{strand}"
+        #   puts " File : #{aa_from_file}"
+        #   puts " Trans: #{aa_translated}"
+        # end
+      end
+      @features.push(cgv_feature)
     end
     # puts @features.count
   end
 
   def build_legend
-    print "Building legend..."
+    print "Building Legend..."
     config_items = {}
     default_legend_name = nil
     # Read config file legend items
@@ -296,20 +259,19 @@ class CGViewJSON
   end
 
   def build_captions
-    print "Building captions..."
+    print "Building Captions..."
     @captions = []
     config_captions = @config[:captions].is_a?(Array) ? @config[:captions] : []
     config_captions.each do |caption|
-      if caption[:items]
-        @captions << caption
-      elsif caption[:name].downcase == 'title' && map_title != ""
-        caption[:items] = [ { name:  map_title}]
-        @captions << caption
+      if caption[:name].downcase == 'title' && map_title != ""
+        caption[:name] = map_title
       end
+      @captions << caption
     end
     puts @captions.count
   end
 
+  # FIXME: Use code from prokan blast tool
   # Currently only reads blastn, blastx, tblastx results properly
   # Blast results are expected to have the typical format without a header
   # (i.e. option -outfmt 6)
@@ -379,13 +341,10 @@ class CGViewJSON
       @blast_tracks << {
         name: "blast_#{num}",
         position: 'inside',
-        strand: 'combined',
-        contents: {
-          type: 'feature',
-          # FIXME: source becomes collection
-          from: 'source',
-          extract: "blast_#{num}"
-        }
+        separateFeaturesBy: 'none',
+        dataType: 'feature',
+        dataMethod: 'source',
+        dataKeys: "blast_#{num}"
       }
     end
   end
@@ -401,61 +360,9 @@ class CGViewJSON
     query
   end
 
-  # Config file format:
-  # id,index,original_index,length,strand
-  def read_contigs(path)
-    puts "Reading contigs..."
-    contigs = []
-    CSV.foreach(path, headers: true) do |row|
-      length = row['length'].to_i
-      contigs.push({
-        id: "cgv-contig-#{row['original_index']}",
-        name: row['id'],
-        length: length,
-        orientation: row['strand']
-      })
-    end
-    contigs
-  end
-
   def contigs?
     @contigs && @contigs.length > 0
   end
-
-  def read_contigs_OLD(path)
-    puts "Creating contig features..."
-    # Create Features
-    start = 1
-    CSV.foreach(path, headers: true) do |row|
-      length = row['length'].to_i
-      @features.push({
-        type: 'Contig',
-        name: row['id'],
-        # meta: meta,
-        start: start,
-        stop: start + length - 1,
-        strand: row['strand'],
-        # FIXME: source becomes collection
-        source: "contigs",
-      })
-      start += length.to_i
-    end
-
-    # Create Track
-    @contig_track = {
-      name: "Contigs",
-      position: 'inside',
-      strand: 'combined',
-      thicknessRatio: 0.5,
-      contents: {
-        type: 'feature',
-        # FIXME: source becomes collection
-        from: 'source',
-        extract: "contigs"
-      }
-    }
-  end
-
 
   def read_gff_analysis(path)
     starts = []
@@ -504,20 +411,12 @@ class CGViewJSON
     print "Building Tracks..."
     @tracks << {
       name: 'Features',
-      readingFrame: 'combined',
-      strand: 'separated',
+      separateFeaturesBy: 'strand',
       position: 'both',
-      contents: {
-        type: 'feature',
-        # FIXME: source becomes collection
-        from: 'source',
-        extract: 'sequence-features'
-      }
+      dataType: 'feature',
+      dataMethod: 'source',
+      dataKeys: "#{@seq_type}-features"
     }
-
-    # if @contig_track
-    #   @tracks << @contig_track
-    # end
 
     unless @blast_tracks.empty?
       @tracks += @blast_tracks
@@ -527,15 +426,38 @@ class CGViewJSON
       @tracks << {
         name: 'Analysis',
         position: 'inside',
-        contents: {
-          type: 'plot',
-          # FIXME: source becomes collection
-          from: 'source',
-          extract: 'analysis'
-        }
+        dataType: 'plot',
+        dataMethod: 'source',
+        dataKeys: "analysis"
       }
     end
     puts @tracks.count
+  end
+
+  # Goes through all features and determines the most common genetic code.
+  # The common code will be used for the map viewer and all
+  # features with the common code will have their geneticCode remove
+  # We will only keep the genetic code for a feature if is different the common case.
+  def build_genetic_code
+    # Get code counts
+    codes = {}
+    cds_count = 0
+    features.each do |feature|
+      code = feature[:geneticCode]
+      count = codes[code]
+      codes[code] = count ? (count + 1) : 1
+      cds_count += 1 if feature[:type] == 'CDS'
+    end
+    # This will return the first code with the max count.
+    # Note, there could be more than one code with the max value.
+    @common_genetic_code = codes.key(codes.values.max)
+    puts "Most Common Genetic Code: #{@common_genetic_code} (Count: #{codes.values.max}/#{cds_count} CDS)"
+    # Remove common genetic code from features
+    features.each do |feature|
+      if feature[:geneticCode] == @common_genetic_code
+        feature.delete(:geneticCode)
+      end
+    end
   end
 
   def build_cgview
@@ -544,17 +466,15 @@ class CGViewJSON
       @cgview[:sequence][:seq] = "SEQUENCE WOULD GO HERE"
       @cgview[:features] += @features[1..5]
     else
-      # if contigs?
-        @cgview[:sequence][:contigs] = @contigs
-      # else
-      #   # FIXME: this will become "chromosome"
-      #   @cgview[:sequence][:seq] = @sequence
-      # end
+      @cgview[:sequence][:contigs] = @contigs
       @cgview[:features] += @features
     end
     @cgview[:tracks] = @tracks + @cgview[:tracks]
     unless @plots.empty?
       @cgview[:plots] = @plots
+    end
+    if @common_genetic_code 
+      @cgview[:geneticCode] = @common_genetic_code
     end
 
     @cgview[:captions] += @captions
@@ -597,12 +517,12 @@ end
 # file = "data/sequences/NC_000907.gbk" # 1.8 MB
 # # # file = "data/sequences/NC_000913.gbk" # 4.6 MB
 # config_path = 'scripts/cgview-builder/config_example.yaml'
-# cgview = CGViewJSON.new(file, config: config_path, debug: debug)
+# cgview = CGViewBuilder.new(file, config: config_path, debug: debug)
 # #
 # # # file = "data/sequences/B_pert_TahomaI.gbk" # 4 MB
 # # # config_path = 'scripts/cgview_json_builder/test_config.yaml'
 # # # analysis_path = '/Users/jason/Desktop/merged_hits_cov.gff'
-# # # cgview = CGViewJSON.new(file, config: config_path, debug: debug, analysis_path: analysis_path)
+# # # cgview = CGViewBuilder.new(file, config: config_path, debug: debug, analysis_path: analysis_path)
 # #
 # #
 # cgview.write_json("/Users/jason/workspace/stothard_group/cgview-js/data/tests/builder.json")

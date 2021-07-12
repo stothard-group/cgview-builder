@@ -1,6 +1,8 @@
-require_relative 'cgview_json'
+require_relative 'cgview_builder'
 require 'optparse'
 require 'ostruct'
+
+VERSION='1.0.0'
 
 # Command line options will be stored in *options*
 options = OpenStruct.new
@@ -9,7 +11,7 @@ options = OpenStruct.new
 optparse = OptionParser.new do |opts|
   opts.summary_width = 30
 
-  opts.banner = "Usage: cgview_json_builder.rb [options]"
+  opts.banner = "Usage: cgview_builder_cli.rb [options]"
   opts.separator ""
   opts.separator "Required Arguments:"
 
@@ -40,8 +42,10 @@ optparse = OptionParser.new do |opts|
     options.blast_paths = blast_paths
   end
 
-  opts.on("-t", "--contigs FILE", "A CSV file describing the contigs: NOT IMPLEMENTED YET") do |contigs|
-    options.contigs = contigs
+  # This will print an options summary.
+  opts.on('-v', '', '--version', "Print version") do
+    puts "CGViewBuilder #{VERSION}"
+    exit!
   end
 
   # This will print an options summary.
@@ -77,7 +81,7 @@ if options.blast_paths
   cgview_options[:blasts] =  options.blast_paths.split(',')
 end
 
-cgview = CGViewJSON.new(options.seqfile, cgview_options)
+cgview = CGViewBuilder.new(options.seqfile, cgview_options)
 cgview.write_json(options.outfile)
 
 
