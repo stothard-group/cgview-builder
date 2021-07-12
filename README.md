@@ -11,7 +11,7 @@ CGViewBuilder consists of two files:
 ## Installation
 
 - Download the git repository.
-- Install CGViewBuilder's one dependency [BioRuby](https://bioruby.org):
+- Install CGViewBuilder's one dependency [BioRuby](http://bioruby.org):
 ```bash
 gem install bio
 ```
