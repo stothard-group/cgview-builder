@@ -48,4 +48,5 @@ ruby cgview_builder_cli.rb [OPTIONS]
 
 An optional config YAML can be provided to CGViewBuilder. This file will can be
 used to set default values for the generated JSON (e.g. colors, legends, captions, etc).
+See the commented [example](config_example.yml) for details.
 

@@ -44,6 +44,7 @@ class CGViewBuilder
       backbone: {},
       ruler: {},
       dividers: {},
+      annotation: {},
       sequence: {},
       captions: [],
       legend: {},
@@ -59,6 +60,7 @@ class CGViewBuilder
     @cgview[:backbone] = config[:backbone] if config[:backbone]
     @cgview[:ruler] = config[:ruler] if config[:ruler]
     @cgview[:dividers] = config[:dividers] if config[:dividers]
+    @cgview[:annotation] = config[:annotation] if config[:annotation]
     @cgview[:sequence] = config[:sequence]
     @cgview[:legend] = config[:legend]
     @cgview[:tracks] = config[:tracks] || []
@@ -240,7 +242,6 @@ class CGViewBuilder
       @config[:legend][:items].each { |i| config_items[i[:name]] = i }
       default_legend_name =  @config[:legend][:default]
     end
-    # FIXME: add default legend if one does not exist
     @features.each do |feature|
       if config_items[feature[:type]]
         feature[:legend] = config_items[feature[:type]][:name]
