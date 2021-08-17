@@ -40,8 +40,7 @@ ruby cgview_builder_cli.rb [OPTIONS]
     General Options:
         -c, --config FILE              Config File
         -b, --blasts FILEs             One or more blast files (separated by ,)
-        -v, --version
-                                       Print version
+        -v, --version                  Print version
         -h, -?, --help                 Show this message
 
 ## Config YAML

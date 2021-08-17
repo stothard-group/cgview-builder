@@ -11,7 +11,6 @@
 # - visible [Default: true]
 # - meta    [Default: {}]
 cgview:
-
   settings: # Defaults
     backgroundColor: 'white'
     showShading: true
@@ -41,7 +40,7 @@ cgview:
     onlyDrawFavorites: false
     # color: 'blue' Default is the feature legend color
   captions:
-    # A caption named 'TITLE' will have it's name replaced with the map title provided by
+    # A caption named 'TITLE' will have it's name replaced with the map title provided by either
     #   - the --map_name option
     #   - GenBank locus name
     - name: "TITLE"
@@ -79,7 +78,7 @@ cgview:
       #   swatchColor: 'rgba(153,153,153,0.5)'
   tracks:
     # CGViewBuilder automatically creates a track for the features in the sequence file.
-    # Additional track (e.g. GC Skew, GC Content, ORFs) van be added here
+    # Additional tracks (e.g. GC Skew, GC Content, ORFs) can be added here.
     - name: 'CG Content'
       thicknessRatio: 2
       position: 'inside'
