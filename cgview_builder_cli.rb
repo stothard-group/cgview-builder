@@ -3,7 +3,7 @@ require 'optparse'
 require 'ostruct'
 
 # Version should match latest Major.Minor version of CGView.js
-VERSION='1.0.0'
+VERSION='1.1.0'
 
 # Command line options will be stored in *options*
 options = OpenStruct.new
