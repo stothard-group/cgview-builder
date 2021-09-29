@@ -36,7 +36,7 @@ cgview:
     font: 'sans-serif, plain, 14'
     color: 'black'
   annotation: # Defaults
-    font: 'sans-serif, plain, 12'
+    font: 'monospace, plain, 12'
     onlyDrawFavorites: false
     # color: 'blue' Default is the feature legend color
   captions:

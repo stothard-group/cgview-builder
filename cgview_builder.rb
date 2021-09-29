@@ -7,7 +7,7 @@ require 'securerandom'
 
 class CGViewBuilder
 
-  VERSION = '0.1'
+  VERSION = '1.1.0'
 
   attr_accessor :config, :options, :sequence, :cgview, :seq_type, :features,
                 :tracks, :debug, :captions, :contigs
@@ -115,20 +115,23 @@ class CGViewBuilder
       sequence_length = @sequence.length
     else
       @contigs = []
+      contig_names = []
       flatfile.each_with_index do |seq_object, i|
         biosequence = seq_object.to_biosequence
         seq = biosequence.to_s
         next if seq.empty?
         sequence_num += 1
         print "."
+
+        contig_name = self.unique_name(seq_object.entry_id, contig_names)
         contig = {
-          id: seq_object.entry_id,
-          name: seq_object.entry_id,
+          name: contig_name,
           orientation: '+',
           length: seq.length,
           seq: seq.upcase
         }
         sequence_length += seq.length
+        contig_names << contig_name
 
         extract_features(seq_object, contig)
         if i == 0
@@ -141,6 +144,21 @@ class CGViewBuilder
     end
     puts "Extracted Sequences: #{sequence_num}, Length: #{sequence_length} bp, Type: #{@seq_type}"
     puts "Extracted Features: #{@features.count}"
+  end
+
+  def unique_name(name, all_names)
+    if all_names.include?(name)
+      count = 1
+      new_name = ''
+      loop do
+        new_name = "#{name}-#{count}"
+        break unless all_names.include?(new_name)
+        count += 1
+      end
+      new_name
+    else
+      name
+    end
   end
 
   # Simple method for detecting file type
@@ -208,7 +226,7 @@ class CGViewBuilder
         source: "#{@seq_type}-features"
       }
       if contig
-        cgv_feature[:contig] = contig[:id]
+        cgv_feature[:contig] = contig[:name]
       end
       if codon_start && codon_start != 1
         cgv_feature[:codonStart] = codon_start
