@@ -148,7 +148,7 @@ class CGViewBuilder
 
   def unique_name(name, all_names)
     if all_names.include?(name)
-      count = 1
+      count = 2
       new_name = ''
       loop do
         new_name = "#{name}-#{count}"
