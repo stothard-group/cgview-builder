@@ -13,7 +13,7 @@ class CGViewBuilder
                 :tracks, :debug, :captions, :contigs
 
   def initialize(sequence_path, options={})
-    @map_id = options[:map_id] || SecureRandom.hex(20)
+    @map_id = options[:map_id] || SecureRandom.uuid
     @map_name = options[:map_name]
     @cgview = initialize_cgview
     @options = options
@@ -135,7 +135,7 @@ class CGViewBuilder
 
         extract_features(seq_object, contig)
         if i == 0
-          @map_name ||= seq_object.entry_id
+          @map_name = "#{@map_name}".empty?  ? seq_object.definition : @map_name
           @cgview[:name] = @map_name
         end
         @contigs << contig
