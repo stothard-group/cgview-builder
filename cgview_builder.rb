@@ -428,14 +428,17 @@ class CGViewBuilder
 
   def build_tracks
     print "Building Tracks..."
-    @tracks << {
-      name: 'Features',
-      separateFeaturesBy: 'strand',
-      position: 'both',
-      dataType: 'feature',
-      dataMethod: 'source',
-      dataKeys: "#{@seq_type}-features"
-    }
+
+    if [:genbank, :embl].include? @seq_type
+      @tracks << {
+        name: 'Features',
+        separateFeaturesBy: 'strand',
+        position: 'both',
+        dataType: 'feature',
+        dataMethod: 'source',
+        dataKeys: "#{@seq_type}-features"
+      }
+    end
 
     unless @blast_tracks.empty?
       @tracks += @blast_tracks
