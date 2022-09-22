@@ -202,6 +202,7 @@ class CGViewBuilder
       # NOTE: This converts the array of qualifiers to a easily accessible hash.
       # However, there is a risk some information is lost when two or more qualifiers are the same.
       qualifiers = feature.assoc
+      # name = qualifiers['product'] || qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || featureType
       name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || featureType
       # This is fix issues if the user has unusual characters in the note
       name.force_encoding(Encoding::UTF_8)
