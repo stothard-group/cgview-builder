@@ -91,7 +91,7 @@ class CGViewBuilder
     when 'Bio::FastaFormat'
       @seq_type = :fasta
     else
-      print "\nCould not autodetect filetype. Trying different method..."
+      puts "\nCould not autodetect filetype. Trying different method..."
       @seq_type = detect_filetype(path)
       if @seq_type != :raw
         case @seq_type
@@ -105,14 +105,19 @@ class CGViewBuilder
       end
       # @seq_type = :raw
     end
+    puts "File Type: #{@seq_type}"
 
     # Extract sequence
     sequence_num = 0
     sequence_length = 0
     if @seq_type == :raw
-      @sequence = File.read(path).gsub(/[^A-Za-z]/, '').upcase
+      sequence = File.read(path).gsub(/[^A-Za-z]/, '').upcase
       sequence_num += 1
-      sequence_length = @sequence.length
+      sequence_length = sequence.length
+      @contigs = [{
+        name: 'Sequence',
+        seq: sequence,
+      }]
     else
       @contigs = []
       contig_names = []

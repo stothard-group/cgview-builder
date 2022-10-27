@@ -2,6 +2,9 @@
 # CGViewBuilder Changelog
 --------------------------------------------------------------------------------
 
+## v1.1.1 - 2022-10-27
+- Fixed: raw sequences now work
+
 ## v1.1.0 - 2021-09-29
 
 - Remove 'id' attribute from Contig (Use 'name' instead)
