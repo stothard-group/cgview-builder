@@ -151,6 +151,9 @@ class CGViewBuilder
     puts "Extracted Features: #{@features.count}"
   end
 
+  # TODO:
+  # - add 3 optional argument: length
+  # - if the name is longer than length it must be reduced
   def unique_name(name, all_names)
     if all_names.include?(name)
       count = 2
