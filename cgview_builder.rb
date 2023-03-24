@@ -128,7 +128,10 @@ class CGViewBuilder
         sequence_num += 1
         print "."
 
-        contig_name = self.unique_name(seq_object.entry_id, contig_names)
+
+        contig_temp_name = seq_object.entry_id
+        contig_temp_name.gsub!('|', '_')
+        contig_name = self.unique_name(contig_temp_name, contig_names)
         contig = {
           name: contig_name,
           orientation: '+',
