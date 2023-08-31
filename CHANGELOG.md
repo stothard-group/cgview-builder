@@ -2,6 +2,9 @@
 # CGViewBuilder Changelog
 --------------------------------------------------------------------------------
 
+## Unreleased/Tagged
+- Added product and db_xref as fallback for feature names
+
 ## v1.1.1 - 2022-10-27
 - Fixed: raw sequences now work
 

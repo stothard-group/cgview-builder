@@ -214,7 +214,7 @@ class CGViewBuilder
       # However, there is a risk some information is lost when two or more qualifiers are the same.
       qualifiers = feature.assoc
       # name = qualifiers['product'] || qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || featureType
-      name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || featureType
+      name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || qualifiers['product'] || qualifiers['db_xref'] || featureType
       # This is fix issues if the user has unusual characters in the note
       name.force_encoding(Encoding::UTF_8)
       codon_start = qualifiers['codon_start']
