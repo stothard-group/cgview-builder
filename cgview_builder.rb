@@ -131,6 +131,7 @@ class CGViewBuilder
 
         contig_temp_name = seq_object.entry_id
         contig_temp_name.gsub!('|', '_')
+        contig_temp_name.gsub!(';', '_')
         contig_name = self.unique_name(contig_temp_name, contig_names)
         contig = {
           name: contig_name,

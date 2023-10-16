@@ -4,6 +4,7 @@
 
 ## Unreleased/Tagged
 - Added product and db_xref as fallback for feature names
+- Remove semilcolons from contigs names (replace with _)
 
 ## v1.1.1 - 2022-10-27
 - Fixed: raw sequences now work
