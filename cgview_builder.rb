@@ -215,7 +215,8 @@ class CGViewBuilder
       # However, there is a risk some information is lost when two or more qualifiers are the same.
       qualifiers = feature.assoc
       # name = qualifiers['product'] || qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || featureType
-      name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || qualifiers['product'] || qualifiers['db_xref'] || featureType
+      # name = qualifiers['gene'] || qualifiers['locus_tag'] || qualifiers['note'] || qualifiers['product'] || qualifiers['db_xref'] || featureType
+      name = name_for(qualifiers, ['gene', 'locus_tag', 'note', 'product', 'db_xref']) || featureType
       # This is fix issues if the user has unusual characters in the note
       name.force_encoding(Encoding::UTF_8)
       codon_start = qualifiers['codon_start']
@@ -288,6 +289,15 @@ class CGViewBuilder
     feature_legend_names.each { |n| items.push config_items[n] }
     @cgview[:legend][:items] = items
     puts feature_legend_names.count
+  end
+
+  def check_name(name)
+    name.is_a?(String) && !name.empty?
+  end
+
+  def name_for(qualifiers, keys)
+    key = keys.find { |k| check_name(qualifiers[k]) }
+    key ? qualifiers[key] : nil
   end
 
   def build_captions
