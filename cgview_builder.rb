@@ -129,7 +129,10 @@ class CGViewBuilder
         print "."
 
 
-        contig_temp_name = seq_object.entry_id
+        # contig_temp_name = seq_object.entry_id
+        # contig_temp_name.force_encoding(Encoding::UTF_8)
+        # Remove problematic characters
+        contig_temp_name = seq_object.entry_id.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
         contig_temp_name.gsub!('|', '_')
         contig_temp_name.gsub!(';', '_')
         contig_name = self.unique_name(contig_temp_name, contig_names)
@@ -538,7 +541,10 @@ class CGViewBuilder
   end
 
   def to_json
-    JSON.generate({ cgview: @cgview })
+    # JSON.generate({ cgview: @cgview })
+    data = {cgview: @cgview}
+    # data.force_encoding('UTF-8')
+    JSON.generate(data, endcode: 'UTF-8')
   end
 
   def write_json(path)

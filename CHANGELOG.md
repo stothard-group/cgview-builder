@@ -6,6 +6,7 @@
 - Added product and db_xref as fallback for feature names
 - Remove semilcolons from contigs names (replace with _)
 - Fix error where empty qualifiers strings were converted to Boolean
+- Fix contig names encoding issues ("\\xBB" from ASCII-8BIT to UTF-8 (Encoding::UndefinedConversionError))
 
 ## v1.1.1 - 2022-10-27
 - Fixed: raw sequences now work
